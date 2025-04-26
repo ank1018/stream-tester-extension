@@ -135,6 +135,38 @@ metrics.selectedSourceIndex = 0;
 
 // Add event listener for the source dropdown
 document.addEventListener('DOMContentLoaded', function () {
+  const headerActions = document.querySelector('.header-actions');
+  const reloadButton = document.createElement('button');
+  reloadButton.id = 'reloadMonitoring';
+  reloadButton.className = 'reload-button';
+  reloadButton.innerHTML = '↻ Reload';
+  reloadButton.style.backgroundColor = '#3498db';
+  reloadButton.style.color = 'white';
+  reloadButton.style.border = 'none';
+  reloadButton.style.borderRadius = '4px';
+  reloadButton.style.padding = '8px 16px';
+  reloadButton.style.fontSize = '14px';
+  reloadButton.style.cursor = 'pointer';
+  reloadButton.style.marginLeft = '10px';
+  headerActions.appendChild(reloadButton);
+
+  reloadButton.addEventListener('click', function () {
+    console.log('[V_Extension] Reload button clicked');
+    logEvent('System', 'Reload button clicked', Date.now());
+
+    chrome.devtools.inspectedWindow.eval(
+      'console.log("[V_Extension] Requesting video monitoring reload");' +
+      'window.dispatchEvent(new CustomEvent("ReloadVideoMonitoring"));',
+      function (result, isException) {
+        if (isException) {
+          console.error('[V_Extension] Error sending reload message:', isException);
+        }
+      }
+    );
+
+    logEvent('System', 'Reload requested', Date.now());
+  });
+
   const sourceSelector = document.getElementById('sourceSelector');
   if (sourceSelector) {
     sourceSelector.addEventListener('change', function (e) {
@@ -531,7 +563,7 @@ window.addEventListener('message', (event) => {
 // Log panel ready
 console.log("[V_Extension] Video metrics panel ready!");
 
-function updateStreamStatus(type, data) {
+function updateStreamStatus(type, data, isNull = false) {
   const statusDiv = document.getElementById('streamStatus');
   statusDiv.innerHTML = `
     <div>
@@ -607,7 +639,6 @@ function updateStreamDetails(streamInfo) {
           <div>Watermark: Not Enabled</div>
       </div>`;
 
-  // Stream Info
   const streamTypeInfo = `
       <div class="detail-section">
           <h3>Stream Information</h3>
@@ -631,13 +662,11 @@ function updateStreamDetails(streamInfo) {
   `;
 }
 
-// Helper function to render VAST tag information
 function renderVastTags(extraData) {
   if (!extraData) return '';
 
   let vastTagsHtml = '';
 
-  // Pre-roll VAST tags
   if (extraData.preRollVastTagIds?.length > 0) {
     vastTagsHtml += '<div class="vast-tags"><strong>Pre-roll VAST Tags:</strong><ul>';
     extraData.preRollVastTagIds.forEach(tag => {
@@ -646,7 +675,6 @@ function renderVastTags(extraData) {
     vastTagsHtml += '</ul></div>';
   }
 
-  // Mid-roll VAST tags
   if (extraData.midRollVastTagIds?.length > 0) {
     vastTagsHtml += '<div class="vast-tags"><strong>Mid-roll VAST Tags:</strong><ul>';
     extraData.midRollVastTagIds.forEach(tag => {
@@ -655,7 +683,6 @@ function renderVastTags(extraData) {
     vastTagsHtml += '</ul></div>';
   }
 
-  // Ad Tag Parameters
   if (extraData.adTagParams) {
     vastTagsHtml += `
             <div class="ad-tag-params">
@@ -667,7 +694,6 @@ function renderVastTags(extraData) {
         `;
   }
 
-  // Add extraData as formatted JSON
   vastTagsHtml += `
     <div class="extra-data">
       <strong>Extra Data:</strong>

@@ -206,26 +206,89 @@ function getErrorDetails(code) {
     return errorMap[code] || 'Unknown error';
 }
 
+window.addEventListener('ReloadVideoMonitoring', function () {
+    console.log('[V_Extension] ReloadVideoMonitoring event received');
+
+    // Clean up existing listeners first
+    const videos = document.querySelectorAll('video');
+    videos.forEach(video => {
+        if (video._monitoringAttached) {
+            console.log('[V_Extension] Cleaning up existing listeners for:', video);
+            // If you stored handlers in _eventHandlers, remove them
+            if (video._eventHandlers) {
+                for (const [eventName, handler] of Object.entries(video._eventHandlers)) {
+                    video.removeEventListener(eventName, handler);
+                }
+            }
+            video._monitoringAttached = false;
+        }
+    });
+
+    // Setup monitoring again
+    setupVideoMonitoring();
+
+    // If you have these functions, call them too
+    if (typeof setupVideoJsMonitoring === 'function') {
+        setupVideoJsMonitoring();
+    }
+
+    if (typeof startMetricsPolling === 'function') {
+        startMetricsPolling();
+    }
+
+    // Announce completion
+    window.dispatchEvent(new CustomEvent('VideoPlayerEvent', {
+        detail: {
+            eventName: 'systemEvent',
+            data: 'Video monitoring reloaded',
+            timestamp: Date.now()
+        }
+    }));
+});
+
 function setupVideoMonitoring() {
     const videos = document.querySelectorAll('video');
-    console.log('setupVideoMonitoring.................', videos.length, 'videos');
+    console.log('[V_Extension] Setting up video monitoring for', videos.length, 'videos');
+
     videos.forEach(video => {
+        if (video._monitoringAttached) {
+            console.log('[V_Extension] Video already monitored:', video);
+            return;
+        }
+
+        video._eventHandlers = {};
+
         eventsList.forEach(eventName => {
-            video.addEventListener(eventName, () => captureVideoMetrics(video, eventName));
+            const handler = function () {
+                captureVideoMetrics(video, eventName);
+            };
+            video.addEventListener(eventName, handler);
+            video._eventHandlers[eventName] = handler;
         });
 
-        video.addEventListener('error', () => {
+        const errorHandler = function () {
             const errorData = {
                 code: video.error ? video.error.code : 'unknown',
                 message: video.error ? video.error.message : 'unknown error',
                 details: getErrorDetails(video.error ? video.error.code : 0)
             };
             captureVideoMetrics(video, 'error', errorData);
-        });
-        // detectStall(video);
-        console.log("Video monitoring set up for", video);
+        };
+        video.addEventListener('error', errorHandler);
+        video._eventHandlers['error'] = errorHandler;
+
+        video._monitoringAttached = true;
+
+        captureVideoMetrics(video, 'monitoring_attached');
+        console.log("[V_Extension] Video monitoring set up for", video);
     });
+
+    if (videos.length === 0) {
+        setTimeout(setupVideoMonitoring, 1000);
+    }
 }
+
+// setTimeout(setupVideoMonitoring, 100);
 
 document.addEventListener('DOMContentLoaded', setupVideoMonitoring);
 setTimeout(setupVideoMonitoring, 3000);  // TODO: if video added later
@@ -298,29 +361,16 @@ function startMetricsPolling() {
         console.log('startMetricsPolling.................', videos.length, 'videos');
         if (videos.length > 0) {
             detectStall(videos[0]);
-            captureVideoMetrics(videos[0], 'metricsPoll');
+            // captureVideoMetrics(videos[0], 'metricsPoll');
         }
     }, 1000);
 }
 
-// function startMetricsPolling() {
-//   setInterval(() => {
-//     const videos = document.querySelectorAll('video');
-//     if (videos.length > 0) {
-//       captureVideoMetrics(videos[0], 'metricsPoll');
-//     }
-//   }, 1000);
-// }
-//
-// startMetricsPolling();
 
-// Add this near the top of the file after other event listeners
 window.addEventListener('ReloadVideoMetrics', function (e) {
     console.log('[V_Extension] Handling reload request');
 
-    // Re-fetch the GraphQL data
     if (window.fetch) {
-        // Find the matching GraphQL request in the performance entries
         const entries = performance.getEntriesByType('resource');
         const graphqlRequests = entries.filter(entry =>
             entry.name.includes('/graphql') ||
@@ -328,7 +378,6 @@ window.addEventListener('ReloadVideoMetrics', function (e) {
         );
 
         if (graphqlRequests.length > 0) {
-            // Replay the most recent matching GraphQL request
             const lastRequest = graphqlRequests[graphqlRequests.length - 1];
             fetch(lastRequest.name, {
                 method: 'POST',
@@ -343,10 +392,8 @@ window.addEventListener('ReloadVideoMetrics', function (e) {
     }
 });
 
-// Add this after the existing fetch interceptor
 let scteEvents = [];
 
-// Function to parse SCTE-35 tags from m3u8 content
 function parseSCTEMarkers(content) {
     const lines = content.split('\n');
     const scteMarkers = [];
@@ -354,12 +401,10 @@ function parseSCTEMarkers(content) {
     let currentCueOut = null;
 
     lines.forEach((line, index) => {
-        // Track current time from segment duration
         if (line.startsWith('#EXTINF:')) {
             currentTime += parseFloat(line.split(':')[1].split(',')[0]);
         }
 
-        // Handle SCTE-35 markers
         if (line.includes('#EXT-OATCLS-SCTE35:') ||
             line.includes('#EXT-X-CUE') ||
             line.includes('#EXT-X-DATERANGE')) {
@@ -370,12 +415,10 @@ function parseSCTEMarkers(content) {
             let scte35Data = '';
             let dateRange = null;
 
-            // Parse OATCLS-SCTE35
             if (line.includes('#EXT-OATCLS-SCTE35:')) {
                 type = 'SCTE35';
                 scte35Data = line.split(':')[1];
             }
-            // Parse CUE-OUT
             else if (line.includes('#EXT-X-CUE-OUT:')) {
                 type = 'CUE-OUT';
                 duration = parseFloat(line.split(':')[1]);
@@ -384,7 +427,6 @@ function parseSCTEMarkers(content) {
                     duration: duration
                 };
             }
-            // Parse CUE-OUT-CONT
             else if (line.includes('#EXT-X-CUE-OUT-CONT:')) {
                 type = 'CUE-OUT-CONT';
                 const params = line.split(':')[1].split(',').reduce((acc, param) => {
@@ -399,7 +441,6 @@ function parseSCTEMarkers(content) {
                     scte35Data = params.SCTE35;
                 }
             }
-            // Parse DATERANGE
             else if (line.includes('#EXT-X-DATERANGE:')) {
                 type = 'DATERANGE';
                 dateRange = line.split(':')[1].split(',').reduce((acc, param) => {
