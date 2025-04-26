@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "Fancode Stream Tester",
+  "version": "1.0",
+  "description": "Tracks video metrics and tests stream performance on localhost.",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://localhost/*",
+    "https://www.fancode.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "injected.js"
+      ],
+      "matches": [
+        "http://localhost/*",
+        "https://www.fancode.com/*"
+      ]
+    }
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost/*",
+        "https://www.fancode.com/*"
+      ],
+      "js": [
+        "contentScript.js"
+      ],
+      "run_at": "document_end"
+    }
+  ],
+  "devtools_page": "devtools.html",
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {}
+  }
+}
