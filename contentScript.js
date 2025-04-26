@@ -31,21 +31,3 @@ window.addEventListener('VideoPlayerEvent', function (e) {
     console.error("Failed to send message:", error);
   }
 });
-
-// Add message listener for reload requests
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'RELOAD_DATA') {
-    console.log('[V_Extension] Received reload request');
-
-    // Create and dispatch a custom event to trigger data refresh
-    const reloadEvent = new CustomEvent('ReloadVideoMetrics', {
-      detail: {
-        operation: message.operation
-      }
-    });
-    window.dispatchEvent(reloadEvent);
-
-    sendResponse({ status: 'reload_initiated' });
-  }
-  return true;
-});

@@ -209,12 +209,10 @@ function getErrorDetails(code) {
 window.addEventListener('ReloadVideoMonitoring', function () {
     console.log('[V_Extension] ReloadVideoMonitoring event received');
 
-    // Clean up existing listeners first
     const videos = document.querySelectorAll('video');
     videos.forEach(video => {
         if (video._monitoringAttached) {
             console.log('[V_Extension] Cleaning up existing listeners for:', video);
-            // If you stored handlers in _eventHandlers, remove them
             if (video._eventHandlers) {
                 for (const [eventName, handler] of Object.entries(video._eventHandlers)) {
                     video.removeEventListener(eventName, handler);
@@ -224,10 +222,8 @@ window.addEventListener('ReloadVideoMonitoring', function () {
         }
     });
 
-    // Setup monitoring again
     setupVideoMonitoring();
 
-    // If you have these functions, call them too
     if (typeof setupVideoJsMonitoring === 'function') {
         setupVideoJsMonitoring();
     }
@@ -236,7 +232,6 @@ window.addEventListener('ReloadVideoMonitoring', function () {
         startMetricsPolling();
     }
 
-    // Announce completion
     window.dispatchEvent(new CustomEvent('VideoPlayerEvent', {
         detail: {
             eventName: 'systemEvent',
@@ -288,10 +283,8 @@ function setupVideoMonitoring() {
     }
 }
 
-// setTimeout(setupVideoMonitoring, 100);
-
 document.addEventListener('DOMContentLoaded', setupVideoMonitoring);
-setTimeout(setupVideoMonitoring, 3000);  // TODO: if video added later
+setTimeout(setupVideoMonitoring, 3000);
 
 let lastPlayPos = 0;
 let currentPlayPos = 0;
@@ -365,32 +358,6 @@ function startMetricsPolling() {
         }
     }, 1000);
 }
-
-
-window.addEventListener('ReloadVideoMetrics', function (e) {
-    console.log('[V_Extension] Handling reload request');
-
-    if (window.fetch) {
-        const entries = performance.getEntriesByType('resource');
-        const graphqlRequests = entries.filter(entry =>
-            entry.name.includes('/graphql') ||
-            entry.initiatorType === 'fetch'
-        );
-
-        if (graphqlRequests.length > 0) {
-            const lastRequest = graphqlRequests[graphqlRequests.length - 1];
-            fetch(lastRequest.name, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                // The actual query will be handled by the fetch interceptor
-            }).catch(error => {
-                console.error('[V_Extension] Error reloading data:', error);
-            });
-        }
-    }
-});
 
 let scteEvents = [];
 

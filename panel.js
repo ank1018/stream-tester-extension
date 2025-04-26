@@ -75,7 +75,6 @@ class SimpleChart {
   }
 }
 
-const bitrateChart = new SimpleChart('bitrateChart', 'bitratePath', 'bitrateArea', 20, 0, 5000);
 const bufferChart = new SimpleChart('bufferChart', 'bufferPath', 'bufferArea', 20, 0, 30);
 
 const metrics = {
@@ -179,7 +178,6 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 });
 
-// Helper function to get the currently selected source info
 function getSelectedSourceInfo() {
   if (metrics.allStreamSources.length > 0) {
     const source = metrics.allStreamSources[metrics.selectedSourceIndex];
@@ -203,15 +201,12 @@ function populateSourceSelector(sources) {
   const selector = document.getElementById('sourceSelector');
   if (!selector) return;
 
-  // Clear existing options
   selector.innerHTML = '';
 
-  // Add options for each source
   sources.forEach((source, index) => {
     const option = document.createElement('option');
     option.value = index;
 
-    // Create a descriptive label for the source
     let sourceName = `Source ${index + 1}`;
     if (source.deliveryType) {
       sourceName += ` (${source.deliveryType})`;
@@ -224,7 +219,6 @@ function populateSourceSelector(sources) {
     selector.appendChild(option);
   });
 
-  // Select the first option by default
   if (sources.length > 0) {
     selector.value = metrics.selectedSourceIndex;
   }
@@ -328,7 +322,6 @@ function processMetrics(eventName, data, timestamp) {
         if (data.data.fanLiveStream) {
           const fanLiveStream = data.data.fanLiveStream;
 
-          // Process session errors
           if (fanLiveStream.session) {
             metrics.sessionInfo = {
               session: fanLiveStream.session?.data,
@@ -340,23 +333,18 @@ function processMetrics(eventName, data, timestamp) {
             metrics.sessionInfo = { session: null, error: null, maxSessionLimit: null };
           }
 
-          // Process stream sources
           if (fanLiveStream.liveStreams?.sources?.length > 0) {
-            // Store all sources in the metrics object
             metrics.allStreamSources = fanLiveStream.liveStreams.sources;
             metrics.streamContentType = fanLiveStream.liveStreams.contentType;
             metrics.streamContentId = fanLiveStream.liveStreams.contentId;
 
-            // Populate the source selector dropdown
             populateSourceSelector(metrics.allStreamSources);
 
-            // Update stream details with the selected source (default to first one)
             updateStreamDetails(getSelectedSourceInfo());
           }
 
         }
 
-        // Log the GraphQL response
         logEvent('GraphQL Response', {
           operation: data.operationName,
           path: data.path
@@ -522,37 +510,14 @@ try {
   console.error("Failed to connect panel:", error);
 }
 
-// Connect to runtime and listen for messages
 console.log("[V_Extension] Panel port created", port);
 
-// Add a simple test function (can be triggered from dev console)
-// window.testMetrics = () => {
-//   console.log("[V_Extension] Running test metrics...");
-//   updateMetric('bitrate', 2500000);  // 2.5 Mbps
-//   updateMetric('buffer', 15.7);      // 15.7 seconds
-//   updateMetric('startup', 1250);     // 1250ms
-//   updateMetric('resolution', '1080p');
-//   updateMetric('fps', '30');
-//   updateMetric('quality', 'High');
-//   updateMetric('dropped', 5);
-
-//   // Update bitrate over time
-//   setTimeout(() => updateMetric('bitrate', 3000000), 1000);  // 3 Mbps after 1s
-//   setTimeout(() => updateMetric('bitrate', 2800000), 2000);  // 2.8 Mbps after 2s
-//   setTimeout(() => updateMetric('buffer', 12.3), 1500);      // Buffer change after 1.5s
-// };
-
-// Clear log button handler
 document.getElementById('clearLog').addEventListener('click', () => {
   document.getElementById('eventLog').innerHTML = '';
   bitrateChart.clear();
   bufferChart.clear();
 });
 
-// Add some test data when loaded (uncomment to test)
-// setTimeout(window.testMetrics, 1000);
-
-// Add listener for metric events from contentScript (if using postMessage)
 window.addEventListener('message', (event) => {
   console.log('[V_Extension] Received metric via postMessage:................', event.data);
   if (event.data && event.data.type === 'videoMetric') {
@@ -560,7 +525,6 @@ window.addEventListener('message', (event) => {
   }
 });
 
-// Log panel ready
 console.log("[V_Extension] Video metrics panel ready!");
 
 function updateStreamStatus(type, data, isNull = false) {
@@ -588,7 +552,6 @@ function updateStreamStatus(type, data, isNull = false) {
 function updateStreamDetails(streamInfo) {
   const detailsDiv = document.getElementById('streamDetails');
 
-  // CSAI Details
   const csaiDetails = streamInfo.csai?.enabled ?
     `<div class="detail-section">
           <h3>CSAI Configuration</h3>
@@ -603,7 +566,6 @@ function updateStreamDetails(streamInfo) {
           <div>CSAI: Not Enabled</div>
       </div>`;
 
-  // SSAI Details
   const ssaiDetails = streamInfo.ssai ?
     `<div class="detail-section">
           <h3>SSAI Configuration</h3>
@@ -615,7 +577,6 @@ function updateStreamDetails(streamInfo) {
           <div>SSAI: Not Enabled</div>
       </div>`;
 
-  // DRM Details
   const drmDetails = streamInfo.drm ?
     `<div class="detail-section">
           <h3>DRM Configuration</h3>
@@ -628,7 +589,6 @@ function updateStreamDetails(streamInfo) {
           <div>DRM: Not Enabled</div>
       </div>`;
 
-  // Watermark Details
   const wmDetails = streamInfo.wm?.enabled ?
     `<div class="detail-section">
           <h3>Watermark Configuration</h3>

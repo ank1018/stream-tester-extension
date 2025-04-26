@@ -1,4 +1,3 @@
-// devtools.js
 console.log("[V_Extension] devtools.js script is running.............");
 
 function onPanelCreated(panel) {
