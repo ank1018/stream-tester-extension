@@ -224,10 +224,6 @@ window.addEventListener('ReloadVideoMonitoring', function () {
 
     setupVideoMonitoring();
 
-    if (typeof setupVideoJsMonitoring === 'function') {
-        setupVideoJsMonitoring();
-    }
-
     if (typeof startMetricsPolling === 'function') {
         startMetricsPolling();
     }
@@ -240,6 +236,9 @@ window.addEventListener('ReloadVideoMonitoring', function () {
         }
     }));
 });
+
+const videoLastTimeMap = new WeakMap();
+const jumpThreshold = 15; // seconds
 
 function setupVideoMonitoring() {
     const videos = document.querySelectorAll('video');
@@ -254,13 +253,47 @@ function setupVideoMonitoring() {
         video._eventHandlers = {};
 
         eventsList.forEach(eventName => {
-            const handler = function () {
-                captureVideoMetrics(video, eventName);
-            };
+            let handler;
+
+            if (eventName === 'timeupdate') {
+                handler = function () {
+                    const currentTime = video.currentTime;
+                    const prevTime = videoLastTimeMap.get(video) ?? 0;
+                    const delta = currentTime - prevTime;
+
+                    if (Math.abs(delta) > jumpThreshold) {
+                        const eventType = delta < 0 ? 'VIDEO_LOOPBACK' : 'VIDEO_JUMP_FORWARD';
+                        console.log(`[${eventType}] Δ=${delta.toFixed(2)}s | From ${prevTime} → ${currentTime}`);
+
+                        const jumpEvent = new CustomEvent('VideoPlayerEvent', {
+                            detail: {
+                                eventName: eventType,
+                                data: {
+                                    currentTime,
+                                    previousTime: prevTime,
+                                    jumpDuration: Math.abs(delta),
+                                },
+                                timestamp: Date.now()
+                            }
+                        });
+
+                        window.dispatchEvent(jumpEvent);
+                    }
+
+                    videoLastTimeMap.set(video, currentTime);
+                    captureVideoMetrics(video, eventName);
+                };
+            } else {
+                handler = function () {
+                    captureVideoMetrics(video, eventName);
+                };
+            }
+
             video.addEventListener(eventName, handler);
             video._eventHandlers[eventName] = handler;
         });
 
+        // Error listener
         const errorHandler = function () {
             const errorData = {
                 code: video.error ? video.error.code : 'unknown',
@@ -273,9 +306,8 @@ function setupVideoMonitoring() {
         video._eventHandlers['error'] = errorHandler;
 
         video._monitoringAttached = true;
-
         captureVideoMetrics(video, 'monitoring_attached');
-        console.log("[V_Extension] Video monitoring set up for", video);
+        console.log('[V_Extension] Video monitoring set up for', video);
     });
 
     if (videos.length === 0) {
@@ -318,34 +350,6 @@ function detectStall(video) {
     }
 
     lastPlayPos = currentPlayPos;
-}
-
-function setupVideoJsMonitoring() {
-    if (window.videojs) {
-        const players = document.querySelectorAll('.video-js');
-        console.log('setupVideoJsMonitoring.................', players.length, 'videojs players');
-        players.forEach(playerEl => {
-            const player = videojs.getPlayer(playerEl);
-            if (player) {
-                player.on('timeupdate', () => {
-                    const tech = player.tech({ IWillNotUseThisInPlugins: true });
-                    const event = new CustomEvent('VideoPlayerEvent', {
-                        detail: {
-                            eventName: 'videojsStats',
-                            data: {
-                                bitrate: tech.representationId ? parseInt(tech.representationId) * 1000 : 0,
-                                bufferLength: player.buffered().end(0) - player.currentTime(),
-                                resolution: player.videoWidth() + 'x' + player.videoHeight(),
-                                frameRate: tech.fps,
-                            },
-                            timestamp: Date.now()
-                        }
-                    });
-                    window.dispatchEvent(event);
-                });
-            }
-        });
-    }
 }
 
 function startMetricsPolling() {
@@ -499,5 +503,4 @@ window.XMLHttpRequest = function () {
 
 // Expose functions to window object so they can be called from the panel
 window.setupVideoMonitoring = setupVideoMonitoring;
-window.setupVideoJsMonitoring = setupVideoJsMonitoring;
 window.startMetricsPolling = startMetricsPolling;
