@@ -1,0 +1,74 @@
+### macOS template
+*.DS_Store
+.AppleDouble
+.LSOverride
+*.log
+*.ipk
+logs
+npm-debug.log*
+# Dependency directories
+**/node_modules/**
+# Optional npm cache directory
+.npm
+# Optional eslint cache
+.eslintcache
+# Optional REPL history
+.node_repl_history
+# Output of 'npm pack'
+*.tgz
+# Yarn Integrity file
+.yarn-integrity
+.idea/
+build
+server-build
+ssr-build
+*.generated.ts
+*.generated.d.ts
+**/stats/**
+**/config/user/**
+**/log/**
+**/coverage/**
+**/dist/**
+.yarn/*
+.vscode/
+*.map
+typings/
+public/
+seoTypes/
+config/user/
+Config.d.ts
+*.d.ts
+
+!global.d.ts
+!global-types.d.ts
+!**/server-globals.d.ts
+!**/custom-chai.d.ts
+!.github/**/*.js
+!github/**/*.js
+tsconfig.tsbuildinfo
+!base.jest.config.js
+!**/eslint.config.js
+!**/jest.config.js
+!**/webpack.config.js
+!**/rspack.config.js
+!**/prettier.config.js
+!**/babel.config.js
+!**/pm2/**/*.js
+!**/theme.d.ts
+!**/theme.type.d.ts
+!**/.storybook/*.js
+!**/public/
+!**/public/**/*.js
+!fc-chai-helpers/**/custom-chai.d.ts
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+!.yarnrc.yml
+.env.local
+
+.nx/cache
+.nx/workspace-data
+.swc
+**/.swc/**

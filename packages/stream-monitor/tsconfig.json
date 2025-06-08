@@ -1,0 +1,30 @@
+{
+    "compilerOptions": {
+        "target": "ES2020",
+        "module": "ES2020",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "outDir": "./dist",
+        "rootDir": "./",
+        "moduleResolution": "node",
+        "lib": [
+            "DOM",
+            "ES2020"
+        ],
+        "types": [
+            "chrome"
+        ],
+        "allowJs": true,
+        "checkJs": false
+    },
+    "include": [
+        "./**/*.ts",
+        "./**/*.js"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist"
+    ]
+}

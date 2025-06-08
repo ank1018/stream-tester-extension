@@ -1,0 +1,14 @@
+{
+    "name": "fc-stream-monitor",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "build": "rm -rf dist && tsc && cp manifest.json dist/ && cp *.html dist/",
+        "watch": "tsc -w"
+    },
+    "devDependencies": {
+        "@types/chrome": "^0.0.260",
+        "@types/node": "^20.11.24",
+        "typescript": "^5.3.3"
+    }
+}

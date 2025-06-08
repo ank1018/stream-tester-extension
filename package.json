@@ -1,0 +1,5 @@
+{
+  "name": "fe-lab",
+  "private": true,
+  "workspaces": ["packages/*"]
+}

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Video Metrics Panel</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: #f9fafb;
+            margin: 0;
+            padding: 16px;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #1f2937;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .metric-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .metric-title {
+            font-size: 12px;
+            font-weight: 500;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+
+        .metric-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .metric-unit {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+
+        .chart-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .chart-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+
+        .chart-canvas {
+            width: 100%;
+            height: 200px;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            background-color: #f9fafb;
+        }
+
+        .quality-section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 24px;
+        }
+
+        .quality-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: #6b7280;
+            margin-bottom: 12px;
+        }
+
+        .quality-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .quality-label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+
+        .quality-value {
+            font-size: 16px;
+            font-weight: 500;
+            color: #1f2937;
+        }
+
+        .log-section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .log-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: #6b7280;
+        }
+
+        .clear-button {
+            font-size: 12px;
+            padding: 4px 8px;
+            background-color: #e5e7eb;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .clear-button:hover {
+            background-color: #d1d5db;
+        }
+
+        .event-log {
+            height: 240px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            padding: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            background-color: #f9fafb;
+        }
+
+        .log-entry {
+            margin-bottom: 4px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .log-time {
+            color: #6b7280;
+        }
+
+        .log-event {
+            font-weight: 600;
+        }
+
+        /* Simple line chart */
+        .chart-line {
+            stroke: #3b82f6;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .chart-area {
+            fill: rgba(59, 130, 246, 0.1);
+        }
+
+        .chart-axis {
+            stroke: #d1d5db;
+            stroke-width: 1;
+        }
+
+        .chart-label {
+            font-size: 10px;
+            fill: #6b7280;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Video Metrics Monitor</h1>
+
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-title">Startup Time</div>
+            <div id="startupTime" class="metric-value">--</div>
+            <div class="metric-unit">milliseconds</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Current Bitrate</div>
+            <div id="currentBitrate" class="metric-value">--</div>
+            <div class="metric-unit">kbps</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Buffer Level</div>
+            <div id="bufferLevel" class="metric-value">--</div>
+            <div class="metric-unit">seconds</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Dropped Frames</div>
+            <div id="droppedFrames" class="metric-value">0</div>
+            <div class="metric-unit">frames</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Network Type</div>
+            <div id="networkType" class="metric-value">--</div>
+            <div class="metric-unit">connection</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Network Speed</div>
+            <div id="networkSpeed" class="metric-value">--</div>
+            <div class="metric-unit">download</div>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <div class="chart-card">
+            <div class="chart-title">Bitrate Over Time</div>
+            <div>
+                <svg id="bitrateChart" class="chart-canvas" viewBox="0 0 400 200" preserveAspectRatio="none">
+                    <line class="chart-axis" x1="40" y1="180" x2="380" y2="180"></line>
+                    <line class="chart-axis" x1="40" y1="20" x2="40" y2="180"></line>
+                    <text class="chart-label" x="200" y="198">Time</text>
+                    <text class="chart-label" x="10" y="100" transform="rotate(-90, 10, 100)">kbps</text>
+                    <path id="bitratePath" class="chart-line" d=""></path>
+                    <path id="bitrateArea" class="chart-area" d=""></path>
+                </svg>
+            </div>
+        </div>
+        <div class="chart-card">
+            <div class="chart-title">Buffer Health</div>
+            <div>
+                <svg id="bufferChart" class="chart-canvas" viewBox="0 0 400 200" preserveAspectRatio="none">
+                    <line class="chart-axis" x1="40" y1="180" x2="380" y2="180"></line>
+                    <line class="chart-axis" x1="40" y1="20" x2="40" y2="180"></line>
+                    <text class="chart-label" x="200" y="198">Time</text>
+                    <text class="chart-label" x="10" y="100" transform="rotate(-90, 10, 100)">seconds</text>
+                    <path id="bufferPath" class="chart-line" d=""></path>
+                    <path id="bufferArea" class="chart-area" d=""></path>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <div class="quality-section">
+        <div class="quality-title">Resolution & Frame Rate</div>
+        <div class="quality-grid">
+            <div>
+                <div class="quality-label">Current Resolution</div>
+                <div id="currentResolution" class="quality-value">--</div>
+            </div>
+            <div>
+                <div class="quality-label">Frame Rate</div>
+                <div id="frameRate" class="quality-value">--</div>
+            </div>
+            <div>
+                <div class="quality-label">Quality Level</div>
+                <div id="qualityLevel" class="quality-value">--</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="log-section">
+        <div class="log-header">
+            <div class="log-title">Event Log</div>
+            <button id="clearLog" class="clear-button">Clear Log</button>
+        </div>
+        <div id="eventLog" class="event-log"></div>
+    </div>
+</div>
+
+<script src="panel.js"></script>
+</body>
+</html>

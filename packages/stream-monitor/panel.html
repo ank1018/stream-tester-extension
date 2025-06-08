@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Video Metrics Panel</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background-color: #f9fafb;
+      margin: 0;
+      padding: 16px;
+      font-size: 14px;
+    }
+
+    .container {
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: #1f2937;
+    }
+
+    .header-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .action-button {
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .action-button:hover {
+      background-color: #2563eb;
+    }
+
+    .action-button:active {
+      background-color: #1d4ed8;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .metric-card {
+      background-color: white;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .metric-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+
+    .metric-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1f2937;
+    }
+
+    .metric-unit {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+
+    .chart-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .chart-card {
+      background-color: white;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .chart-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #6b7280;
+      margin-bottom: 8px;
+    }
+
+    .chart-canvas {
+      width: 100%;
+      height: 200px;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      background-color: #f9fafb;
+    }
+
+    .quality-section {
+      background-color: white;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      margin-bottom: 24px;
+    }
+
+    .quality-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #6b7280;
+      margin-bottom: 12px;
+    }
+
+    .quality-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    .quality-label {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+
+    .quality-value {
+      font-size: 16px;
+      font-weight: 500;
+      color: #1f2937;
+    }
+
+    .log-section {
+      background-color: white;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .log-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .log-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #6b7280;
+    }
+
+    .clear-button {
+      font-size: 12px;
+      padding: 4px 8px;
+      background-color: #e5e7eb;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .clear-button:hover {
+      background-color: #d1d5db;
+    }
+
+    .event-log {
+      height: 240px;
+      overflow-y: auto;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      padding: 8px;
+      font-family: monospace;
+      font-size: 12px;
+      background-color: #f9fafb;
+    }
+
+    .log-entry {
+      margin-bottom: 4px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .log-time {
+      color: #6b7280;
+    }
+
+    .log-event {
+      font-weight: 600;
+    }
+
+    /* Simple line chart */
+    .chart-line {
+      stroke: #3b82f6;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .chart-area {
+      fill: rgba(59, 130, 246, 0.1);
+    }
+
+    .chart-axis {
+      stroke: #d1d5db;
+      stroke-width: 1;
+    }
+
+    .chart-label {
+      font-size: 10px;
+      fill: #6b7280;
+    }
+
+    .graphql-section {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8fafc;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .graphql-container {
+      max-height: 300px;
+      overflow-y: auto;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 10px;
+    }
+
+    .graphql-response {
+      margin-bottom: 15px;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 15px;
+    }
+
+    .operation-name {
+      font-weight: bold;
+      color: #2563eb;
+      margin-bottom: 5px;
+    }
+
+    .response-data {
+      font-family: monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      background: #f1f5f9;
+      padding: 8px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+
+    .placeholder {
+      color: #64748b;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .stream-status-section,
+    .stream-details-section {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8fafc;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .json-data {
+      background-color: #f8f9fa;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 12px;
+      margin: 8px 0;
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      max-height: 300px;
+      overflow-y: auto;
+      color: #333;
+    }
+
+    /* JSON syntax highlighting */
+    .json-data .string {
+      color: #0b8043;
+    }
+
+    .json-data .number {
+      color: #1a73e8;
+    }
+
+    .json-data .boolean {
+      color: #d32f2f;
+    }
+
+    .json-data .null {
+      color: #9e9e9e;
+    }
+
+    .json-data .key {
+      color: #7b1fa2;
+      font-weight: 600;
+    }
+
+    .extra-data,
+    .ad-tag-params {
+      margin-top: 15px;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 12px;
+    }
+
+    .extra-data strong,
+    .ad-tag-params strong {
+      display: block;
+      margin-bottom: 10px;
+      color: #1e40af;
+      font-size: 14px;
+    }
+
+    .extra-data-details,
+    .params-details {
+      margin-left: 12px;
+      background-color: #f8fafc;
+      border-radius: 6px;
+      padding: 8px;
+    }
+
+    .status-container,
+    .details-container {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 15px;
+    }
+
+    .status-details {
+      display: flex;
+      gap: 20px;
+    }
+
+    .error-status {
+      color: #b91c1c;
+      text-align: center;
+      padding: 10px;
+      background: #fee2e2;
+      border-radius: 6px;
+      font-weight: 500;
+      margin-top: 10px;
+    }
+
+    .error-title {
+      color: #dc2626;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .error-details {
+      color: #7f1d1d;
+    }
+
+    .stream-info {
+      display: flex;
+      gap: 15px;
+    }
+
+    .detail-section {
+      width: 20%;
+      max-width: 20%;
+      overflow: auto;
+      background: #f8fafc;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    .detail-section h3 {
+      color: #1e40af;
+      margin: 0 0 8px 0;
+      font-size: 14px;
+    }
+
+    .content-info {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .vast-tags {
+      margin-top: 8px;
+    }
+
+    .vast-tags ul {
+      margin: 4px 0;
+      padding-left: 20px;
+    }
+
+    .vast-tags li {
+      font-size: 12px;
+      margin: 2px 0;
+    }
+
+    .ad-tag-params {
+      margin-top: 8px;
+    }
+
+    .params-details {
+      font-size: 12px;
+      margin-top: 4px;
+      padding-left: 12px;
+    }
+
+    .detail-section {
+      background: #f8fafc;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    .detail-section>div {
+      margin: 4px 0;
+      font-size: 13px;
+    }
+
+    .detail-section strong {
+      color: #4b5563;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+    }
+
+    .control-button {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      color: #1e40af;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .control-button:hover {
+      background-color: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+
+    .control-button:active {
+      background-color: #e2e8f0;
+    }
+
+    .reload-icon {
+      fill: currentColor;
+    }
+
+    .reload-icon.spinning {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Loading indicator styles */
+    .loading-overlay {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.8);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .loading-overlay.active {
+      display: flex;
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .scte-section {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8fafc;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .scte-container {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 15px;
+    }
+
+    .ad-break-status {
+      margin-bottom: 15px;
+      padding: 10px;
+      border-radius: 6px;
+    }
+
+    .active-break {
+      background: #fef3c7;
+      padding: 10px;
+      border-radius: 6px;
+    }
+
+    .break-title {
+      color: #92400e;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .break-details {
+      color: #92400e;
+      font-size: 13px;
+    }
+
+    .no-break {
+      color: #64748b;
+      text-align: center;
+      padding: 10px;
+      background: #f1f5f9;
+      border-radius: 6px;
+    }
+
+    .success-status {
+      color: #065f46;
+      text-align: center;
+      padding: 10px;
+      background: #d1fae5;
+      border-radius: 6px;
+      font-weight: 500;
+    }
+
+    .scte-log {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .scte-marker {
+      margin: 8px 0;
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    .scte-marker.cue-out {
+      background: #fee2e2;
+      border-left: 4px solid #dc2626;
+    }
+
+    .scte-marker.cue-in {
+      background: #dcfce7;
+      border-left: 4px solid #16a34a;
+    }
+
+    .scte-time {
+      color: #4b5563;
+      font-size: 12px;
+    }
+
+    .scte-type {
+      font-weight: bold;
+      margin: 4px 0;
+    }
+
+    .scte-position {
+      color: #4b5563;
+    }
+
+    .scte-raw {
+      font-family: monospace;
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 4px;
+      word-break: break-all;
+    }
+
+    .selector-container {
+      margin: 10px 0;
+      max-width: fit-content;
+    }
+
+    .source-dropdown {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #d1d9e6;
+      background-color: white;
+      font-size: 14px;
+      color: #2c3e50;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .source-dropdown:hover {
+      border-color: #a3aed0;
+    }
+
+    .source-dropdown:focus {
+      outline: none;
+      border-color: #4318ff;
+      box-shadow: 0 0 0 2px rgba(67, 24, 255, 0.1);
+    }
+
+    .chart-grid {
+      stroke: #e5e7eb;
+      stroke-width: 1;
+      stroke-dasharray: 2, 2;
+    }
+
+    .chart-label {
+      font-size: 10px;
+      fill: #6b7280;
+    }
+
+    .chart-axis-group {
+      pointer-events: none;
+    }
+
+    .error-section {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8fafc;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .error-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    .error-card {
+      background-color: white;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .error-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .error-details-container {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+    }
+
+    .error-details-container.expanded {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .error-list {
+      font-size: 12px;
+      color: #4b5563;
+    }
+
+    .error-item {
+      padding: 8px;
+      border-bottom: 1px solid #e5e7eb;
+      margin-bottom: 4px;
+    }
+
+    .error-item:last-child {
+      border-bottom: none;
+    }
+
+    .error-time {
+      color: #6b7280;
+      font-size: 11px;
+      margin-bottom: 2px;
+    }
+
+    .error-message {
+      color: #dc2626;
+      font-weight: 500;
+    }
+
+    .error-code {
+      color: #6b7280;
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    .show-more-btn {
+      width: 100%;
+      padding: 4px 8px;
+      margin-top: 8px;
+      background-color: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      color: #4b5563;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .show-more-btn:hover {
+      background-color: #e5e7eb;
+    }
+
+    .error-count {
+      background-color: #fee2e2;
+      color: #dc2626;
+      padding: 2px 6px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header-actions">
+      <h1>Video Metrics Monitor</h1>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-title">Startup Time</div>
+        <div id="startupTime" class="metric-value">--</div>
+        <div class="metric-unit">milliseconds</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Current Bitrate</div>
+        <div id="currentBitrate" class="metric-value">--</div>
+        <div class="metric-unit">kbps</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-title">Current Resolution</div>
+        <div id="currentResolution" class="metric-value">--</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Frame Rate</div>
+        <div id="frameRate" class="metric-value">--</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Quality Level</div>
+        <div id="qualityLevel" class="metric-value">--</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Buffer Level</div>
+        <div id="bufferLevel" class="metric-value">--</div>
+        <div class="metric-unit">seconds</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Dropped Frames</div>
+        <div id="droppedFrames" class="metric-value">0</div>
+        <div class="metric-unit">frames</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Stream Type</div>
+        <div id="streamTypeAndPlayer" class="metric-value">0</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Network Type</div>
+        <div id="networkType" class="metric-value">--</div>
+        <div class="metric-unit">connection</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-title">Network Speed</div>
+        <div id="networkSpeed" class="metric-value">--</div>
+        <div class="metric-unit">download</div>
+      </div>
+    </div>
+
+    <!-- Error section -->
+    <div class="error-section">
+      <div class="error-title">Error Monitoring</div>
+      <div class="error-grid">
+        <div class="error-card">
+          <div class="error-header">
+            <div class="error-label">Session Errors</div>
+            <div id="sessionErrors" class="error-value">0</div>
+          </div>
+          <div class="error-details-container" id="sessionErrorDetails">
+            <div class="error-list"></div>
+            <button class="show-more-btn" onclick="toggleErrorDetails('session')">Show Details</button>
+          </div>
+        </div>
+        <div class="error-card">
+          <div class="error-header">
+            <div class="error-label">Playback Errors</div>
+            <div id="playbackErrors" class="error-value">0</div>
+          </div>
+          <div class="error-details-container" id="playbackErrorDetails">
+            <div class="error-list"></div>
+            <button class="show-more-btn" onclick="toggleErrorDetails('playback')">Show Details</button>
+          </div>
+        </div>
+        <div class="error-card">
+          <div class="error-header">
+            <div class="error-label">Loop/Jump Events</div>
+            <div id="loopJumpEvents" class="error-value">0</div>
+          </div>
+          <div class="error-details-container" id="loopJumpDetails">
+            <div class="error-list"></div>
+            <button class="show-more-btn" onclick="toggleErrorDetails('loopJump')">Show Details</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stream-details-section">
+      <h2>Stream Details</h2>
+      <div class="selector-container">
+        <select id="sourceSelector" class="source-dropdown">
+          <option value="">Select a source...</option>
+        </select>
+      </div>
+      <div id="streamDetails" class="details-container">
+        <div class="placeholder">Reload page to get stream details...</div>
+      </div>
+    </div>
+
+    <div class="stream-status-section">
+      <h2>Stream Status</h2>
+      <div id="streamStatus" class="status-container">
+        <div class="placeholder">Reload page to get stream status...</div>
+      </div>
+    </div>
+
+    <div class="scte-section">
+      <h2>SCTE-35 Markers</h2>
+      <div id="scteContainer" class="scte-container">
+        <div id="adBreakStatus" class="ad-break-status">
+          <div class="no-break">No Active Ad Break</div>
+        </div>
+        <div id="scteLog" class="scte-log"></div>
+      </div>
+    </div>
+
+    <div class="chart-container">
+      <div class="chart-card">
+        <div class="chart-title">Buffer Health</div>
+        <div>
+          <svg id="bufferChart" class="chart-canvas" viewBox="0 0 400 200" preserveAspectRatio="none">
+            <line class="chart-axis" x1="40" y1="180" x2="380" y2="180"></line>
+            <line class="chart-axis" x1="40" y1="20" x2="40" y2="180"></line>
+            <text class="chart-label" x="200" y="198">Time</text>
+            <text class="chart-label" x="10" y="100" transform="rotate(-90, 10, 100)">seconds</text>
+            <path id="bufferPath" class="chart-line" d=""></path>
+            <path id="bufferArea" class="chart-area" d=""></path>
+          </svg>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Bitrate</div>
+        <div>
+          <svg id="bitrateChart" class="chart-canvas" viewBox="0 0 400 200" preserveAspectRatio="none">
+            <line class="chart-axis" x1="40" y1="180" x2="380" y2="180"></line>
+            <line class="chart-axis" x1="40" y1="20" x2="40" y2="180"></line>
+            <text class="chart-label" x="200" y="198">Time</text>
+            <text class="chart-label" x="10" y="100" transform="rotate(-90, 10, 100)">kbps</text>
+            <path id="bitratePath" class="chart-line" d=""></path>
+            <path id="bitrateArea" class="chart-area" d=""></path>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Event log -->
+    <div class="log-section">
+      <div class="log-header">
+        <div class="log-title">Event Log</div>
+        <button id="clearLog" class="clear-button">Clear Log</button>
+      </div>
+      <div id="eventLog" class="event-log"></div>
+    </div>
+  </div>
+
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+  </div>
+
+  <script src="panel.js"></script>
+</body>
+
+</html>
